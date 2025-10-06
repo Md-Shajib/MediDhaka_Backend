@@ -1,152 +1,3 @@
-// package repo
-
-// import (
-// 	"database/sql"
-// 	"errors"
-// 	"fmt"
-// 	"time"
-
-// 	"github.com/jmoiron/sqlx"
-// )
-
-// type Hospital struct {
-// 	HospitalID  int       `json:"hospital_id" db:"hospital_id"`
-// 	Name        string    `json:"name" db:"name"`
-// 	Address     string    `json:"address" db:"address"`
-// 	PhoneNumber string    `json:"phone_number" db:"phone_number"`
-// 	Email       string    `json:"email" db:"email"`
-// 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-// 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
-// }
-
-// type hospitalRepo struct {
-// 	dbCon *sqlx.DB
-// }
-
-// type HospitalRepo interface {
-// 	Create(hospital Hospital) (*Hospital, error)
-// 	Get(id int) (*Hospital, error)
-// 	List() ([]*Hospital, error)
-// 	Update(h Hospital) (*Hospital, error)
-// 	Delete(id int) error
-// }
-
-// func NewHospitalRepo(dbCon *sqlx.DB) HospitalRepo {
-// 	return &hospitalRepo{
-// 		dbCon: dbCon,
-// 	}
-// }
-
-// func (r *hospitalRepo) Create(hospital Hospital) (*Hospital, error) {
-// 	query := `
-// 		INSERT INTO hospitals (
-// 			name,
-// 			address,
-// 			phone_number,
-// 			email
-// 		)
-// 		VALUES (
-// 			:name,
-// 			:address,
-// 			:phone_number,
-// 			:email
-// 		)
-// 		RETURNING hospital_id, name, address, phone_number, email, created_at, updated_at
-// 	`
-
-// 	// sqlx.NamedQuery helps bind struct fields directly using `db:"field"`
-// 	rows, err := r.dbCon.NamedQuery(query, hospital)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer rows.Close()
-
-// 	if rows.Next() {
-// 		var hospital Hospital
-// 		if err := rows.StructScan(&hospital); err != nil {
-// 			return nil, err
-// 		}
-// 		fmt.Println("Created Successfully: ", hospital)
-// 		return &hospital, nil
-// 	}
-
-// 	return nil, nil
-// }
-
-// func (r *hospitalRepo) Get(id int) (*Hospital, error) {
-// 	var hsp Hospital
-// 	query := `
-// 	 SELECT
-// 	   hospital_id,
-// 	   name, address,
-// 	   phone_number,
-// 	   email,
-// 	   created_at,
-// 	   updated_at
-// 	 FROM hospitals
-// 	 WHERE hospital_id = $1
-// 	`
-// 	err := r.dbCon.Get(&hsp, query, id)
-// 	if err != nil {
-// 		if err == sql.ErrNoRows {
-// 			return nil, errors.New("No data available in database")
-// 		}
-// 		return nil, err
-// 	}
-
-// 	return &hsp, nil
-// }
-
-// func (r *hospitalRepo) List() ([]*Hospital, error) {
-// 	var hspList []*Hospital
-// 	query := `
-// 	  SELECT
-// 	    hospital_id,
-// 	    name, address,
-// 	    phone_number,
-// 	    email,
-// 	    created_at,
-// 	    updated_at
-// 	  FROM hospitals
-// 	`
-// 	err := r.dbCon.Select(&hspList, query)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return hspList, nil
-// }
-
-// func (r *hospitalRepo) Update(h Hospital) (*Hospital, error) {
-// 	query := `
-// 	  UPDATE hospitals
-// 	  SET
-// 		name = :name,
-// 		address = :address,
-// 		phone_number = :phone_number,
-// 		email = :email,
-// 		updated_at = NOW() -- Set updated_at automatically
-// 	  WHERE hospital_id = :hospital_id
-// 	  RETURNING hospital_id, name, address, phone_number, email, created_at, updated_at
-// 	`
-
-// 	row := r.dbCon.QueryRow(query, h.Name, h.Address, h.PhoneNumber, h.Email, h.UpdatedAt)
-// 	err := row.Err()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &h, nil
-// }
-
-// func (r *hospitalRepo) Delete(id int) error {
-// 	query := `DELETE from hospitals WHERE hospital_id = $1`
-
-// 	_, err := r.dbCon.Exec(query, id)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
 package repo
 
 import (
@@ -172,6 +23,7 @@ type Hospital struct {
 	Address     string    `json:"address" db:"address"`
 	PhoneNumber string    `json:"phone_number" db:"phone_number"`
 	Email       string    `json:"email" db:"email"`
+	ImageURL    string    `json:"image_url" db:"image_url"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -204,15 +56,24 @@ func (r *hospitalRepo) Create(hospital Hospital) (*Hospital, error) {
 			name, 
 			address, 
 			phone_number, 
-			email
+			email,
+			image_url
 		)
 		VALUES (
 			:name, 
 			:address, 
 			:phone_number, 
-			:email
+			:email,
+			:image_url
 		)
-		RETURNING hospital_id, name, address, phone_number, email, created_at, updated_at
+		RETURNING
+		  hospital_id,
+		  name, address,
+		  phone_number,
+		  email,
+		  image_url,
+		  created_at,
+		  updated_at;
 	`
 
 	rows, err := r.dbCon.NamedQuery(query, hospital)
@@ -236,17 +97,7 @@ func (r *hospitalRepo) Create(hospital Hospital) (*Hospital, error) {
 // Get retrieves a single Hospital record by its ID.
 func (r *hospitalRepo) Get(id int) (*Hospital, error) {
 	var hsp Hospital
-	query := `
-	 SELECT 
-	 	hospital_id, 
-	 	name, address, 
-	 	phone_number, 
-	 	email, 
-	 	created_at, 
-	 	updated_at 
-	 FROM hospitals 
-	 WHERE hospital_id = $1
-	`
+	query := `SELECT * FROM hospitals WHERE hospital_id = $1`
 	err := r.dbCon.Get(&hsp, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -261,16 +112,7 @@ func (r *hospitalRepo) Get(id int) (*Hospital, error) {
 // List retrieves all Hospital records.
 func (r *hospitalRepo) List() ([]*Hospital, error) {
 	var hspList []*Hospital
-	query := `
-	 SELECT 
-	 	hospital_id, 
-	 	name, address, 
-	 	phone_number, 
-	 	email, 
-	 	created_at, 
-	 	updated_at 
-	 FROM hospitals 
-	`
+	query := `SELECT * FROM hospitals ORDER BY created_at DESC`
 	err := r.dbCon.Select(&hspList, query)
 	if err != nil {
 		return nil, fmt.Errorf("error listing hospitals: %w", err)
@@ -285,9 +127,23 @@ func (r *hospitalRepo) Update(h Hospital) (*Hospital, error) {
 	// Use named query for easier parameter binding
 	query := `
 		UPDATE hospitals
-		SET name=:name, address=:address, phone_number=:phone_number, email=:email, updated_at=:updated_at
+		SET 
+		  name = :name,
+		  address = :address,
+		  phone_number = :phone_number,
+		  email = :email,
+		  image_url = :image_url,
+		  updated_at = :updated_at
 		WHERE hospital_id = :hospital_id
-		RETURNING hospital_id, name, address, phone_number, email, created_at, updated_at
+		RETURNING 
+		  hospital_id,
+		  name,
+		  address,
+		  phone_number,
+		  email,
+		  image_url,
+		  created_at,
+		  updated_at;
 	`
 
 	rows, err := r.dbCon.NamedQuery(query, h)
@@ -311,7 +167,6 @@ func (r *hospitalRepo) Update(h Hospital) (*Hospital, error) {
 // Delete removes a Hospital record by ID.
 func (r *hospitalRepo) Delete(id int) error {
 	query := `DELETE from hospitals WHERE hospital_id = $1`
-
 	result, err := r.dbCon.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("error executing delete query: %w", err)

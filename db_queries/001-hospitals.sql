@@ -4,6 +4,7 @@ CREATE TABLE hospitals (
     address VARCHAR(255),
     phone_number VARCHAR(50) UNIQUE,
     email VARCHAR(100) UNIQUE,
+    image_url VARCHAR(355),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

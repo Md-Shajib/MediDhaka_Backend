@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-func Start(conf config.Config, hospitalRepo repo.HospitalRepo) {
+func Start(conf config.Config, hospitalRepo repo.HospitalRepo, doctorRepo repo.DoctorRepo, hospitalDoctorRepo repo.HospitalDoctorRepo) {
 	manager := middleware.NewManager()
 	manager.Use(
 		middleware.Preflight,
@@ -22,12 +22,12 @@ func Start(conf config.Config, hospitalRepo repo.HospitalRepo) {
 
 	wrappedMux := manager.WrapMux(mux)
 
-	initRoutes(mux, manager, hospitalRepo)
+	initRoutes(mux, manager, hospitalRepo, doctorRepo, hospitalDoctorRepo)
 
 	port := ":" + strconv.Itoa(conf.HttpPort)
-	fmt.Println("Server running on port: ", port)
-	err := http.ListenAndServe(port, wrappedMux)
-	if err != nil {
+	fmt.Println("Server running on port:", port)
+
+	if err := http.ListenAndServe(port, wrappedMux); err != nil {
 		fmt.Println("Error starting the server:", err)
 		os.Exit(1)
 	}

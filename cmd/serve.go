@@ -20,6 +20,8 @@ func Serve() {
 	defer dbCon.Close() // connection closed
 
 	hospitalRepo := repo.NewHospitalRepo(dbCon)
+	doctorRepo := repo.NewDoctorRepo(dbCon)
+	hospitalDoctorRepo := repo.NewHospitalDoctorRepo(dbCon)
 
-	rest.Start(conf, hospitalRepo)
+	rest.Start(conf, hospitalRepo, doctorRepo, hospitalDoctorRepo)
 }
