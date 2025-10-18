@@ -7,13 +7,11 @@ import (
 )
 
 type HospitalDoctor struct {
-	HospitalID int        `json:"hospital_id" db:"hospital_id"`
-	DoctorID   int        `json:"doctor_id" db:"doctor_id"`
-	StartDate  time.Time  `json:"start_date" db:"start_date"`
-	EndDate    *time.Time `json:"end_date,omitempty" db:"end_date"`
-	Role       string     `json:"role" db:"role"`
-	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time  `json:"updated_at" db:"updated_at"`
+	HospitalID int       `json:"hospital_id" db:"hospital_id"`
+	DoctorID   int       `json:"doctor_id" db:"doctor_id"`
+	Role       string    `json:"role" db:"role"`
+	CreatedAt  time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type HospitalDoctorRepo interface {
@@ -34,14 +32,10 @@ func (r *hospitalDoctorRepo) AssignDoctor(rel HospitalDoctor) error {
 		INSERT INTO hospital_doctor (
 		  hospital_id,
 		  doctor_id,
-		  start_date,
-		  end_date,
 		  role
 		) VALUES (
 		  :hospital_id,
 		  :doctor_id,
-		  :start_date,
-		  :end_date,
 		  :role
 		)
 	`

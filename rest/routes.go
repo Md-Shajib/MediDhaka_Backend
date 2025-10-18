@@ -32,5 +32,5 @@ func initRoutes(r *mux.Router, manager *middleware.Manager, hospitalRepo repo.Ho
 
 	// ---------- Hospital–Doctor Relation ----------
 	r.Handle("/hospital-doctor", manager.With(http.HandlerFunc(hospitalDoctorHandler.AssignDoctor))).Methods("POST", "OPTIONS")
-	r.Handle("/hospital-doctor", manager.With(http.HandlerFunc(hospitalDoctorHandler.ListDoctorsByHospital))).Methods("GET", "OPTIONS")
+	r.Handle("/hospital-doctor/{id}", manager.With(http.HandlerFunc(hospitalDoctorHandler.ListDoctorsByHospital))).Methods("GET", "OPTIONS")
 }

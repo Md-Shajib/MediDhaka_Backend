@@ -7,6 +7,8 @@ import (
 	"medidhaka/util"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type DoctorHandler struct {
@@ -41,12 +43,18 @@ func (h *DoctorHandler) ListDoctors(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *DoctorHandler) GetDoctor(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		util.SendData(w, map[string]string{"error": "Invalid ID"}, http.StatusBadRequest)
+	vars := mux.Vars(r)
+	idx, ok := vars["id"]
+	if !ok {
+		util.SendData(w, map[string]string{"error": "Missing doctor ID in URL"}, http.StatusBadRequest)
 		return
 	}
+	id, err := strconv.Atoi(idx)
+	if err != nil {
+		util.SendData(w, map[string]string{"error": "Invalid doctor ID format"}, http.StatusBadRequest)
+		return
+	}
+
 	doctor, err := h.repo.Get(id)
 	if err != nil {
 		if errors.Is(err, repo.ErrDoctorNotFound) {
@@ -60,8 +68,17 @@ func (h *DoctorHandler) GetDoctor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *DoctorHandler) UpdateDoctor(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, _ := strconv.Atoi(idStr)
+	vars := mux.Vars(r)
+	idx, ok := vars["id"]
+	if !ok {
+		util.SendData(w, map[string]string{"error": "Missing doctor ID in URL"}, http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.Atoi(idx)
+	if err != nil {
+		util.SendData(w, map[string]string{"error": "Invalid doctor ID format"}, http.StatusBadRequest)
+		return
+	}
 	var doc repo.Doctor
 	json.NewDecoder(r.Body).Decode(&doc)
 	doc.DoctorID = id
@@ -74,8 +91,17 @@ func (h *DoctorHandler) UpdateDoctor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *DoctorHandler) DeleteDoctor(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, _ := strconv.Atoi(idStr)
+	vars := mux.Vars(r)
+	idx, ok := vars["id"]
+	if !ok {
+		util.SendData(w, map[string]string{"error": "Missing doctor ID in URL"}, http.StatusBadRequest)
+		return
+	}
+	id, err_conversion := strconv.Atoi(idx)
+	if err_conversion != nil {
+		util.SendData(w, map[string]string{"error": "Invalid doctor ID format"}, http.StatusBadRequest)
+		return
+	}
 	err := h.repo.Delete(id)
 	if err != nil {
 		util.SendData(w, map[string]string{"error": "Failed to delete"}, http.StatusInternalServerError)
