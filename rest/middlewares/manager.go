@@ -19,15 +19,16 @@ func (manager *Manager) Use(middlewares ...Middleware) {
 }
 
 func (mngr *Manager) With(next http.Handler, middlewares ...Middleware) http.Handler {
-
 	n := next
 
-	for _, middleware := range middlewares {
-		n = middleware(n)
+	// Apply local middlewares first (inner)
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		n = middlewares[i](n)
 	}
 
-	for _, globalMiddleware := range mngr.globalMiddlewares {
-		n = globalMiddleware(n)
+	// Then apply global middlewares (outer)
+	for i := len(mngr.globalMiddlewares) - 1; i >= 0; i-- {
+		n = mngr.globalMiddlewares[i](n)
 	}
 
 	return n

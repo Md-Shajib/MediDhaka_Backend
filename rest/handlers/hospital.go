@@ -9,6 +9,8 @@ import (
 	"medidhaka/util"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 // HospitalHandler holds the dependency on the HospitalRepo interface.
@@ -21,11 +23,7 @@ func NewHospitalHandler(r repo.HospitalRepo) *HospitalHandler {
 	return &HospitalHandler{repo: r}
 }
 
-// ====================================================================
-// CRUD IMPLEMENTATIONS
-// ====================================================================
-
-// CreateHospital handles POST requests to create a new Hospital record. (C)
+// POST requests to create a new Hospital record.
 func (h *HospitalHandler) CreateHospital(w http.ResponseWriter, r *http.Request) {
 	var hospital repo.Hospital
 	if err := json.NewDecoder(r.Body).Decode(&hospital); err != nil {
@@ -47,10 +45,10 @@ func (h *HospitalHandler) CreateHospital(w http.ResponseWriter, r *http.Request)
 	}
 
 	util.SendData(w, createdHospital, http.StatusCreated)
-	log.Printf("✅ Hospital created: %s (ID: %d)", createdHospital.Name, createdHospital.HospitalID)
+	log.Printf("Hospital created: %s (ID: %d)", createdHospital.Name, createdHospital.HospitalID)
 }
 
-// ListHospitals handles GET requests to retrieve a list of all Hospital records. (R - All)
+// GET requests to retrieve a list of all Hospital records.
 func (h *HospitalHandler) ListHospitals(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	search := query.Get("search")
@@ -85,20 +83,21 @@ func (h *HospitalHandler) ListHospitals(w http.ResponseWriter, r *http.Request) 
 		"totalPages": (total + limit - 1) / limit,
 	}
 
-	// Returns an empty JSON array if no records are found, which is standard.
+	// Returns an empty JSON array if no records are found
 	util.SendData(w, response, http.StatusOK)
 }
 
-// GetHospital handles GET requests to retrieve a single Hospital by ID. (R - Single)
+// GET a single Hospital by ID.
 func (h *HospitalHandler) GetHospital(w http.ResponseWriter, r *http.Request) {
-	// 1. Extract ID from URL path using r.PathValue (standard for Go 1.22 mux)
-	idStr := r.PathValue("id")
-	if idStr == "" {
-		util.SendData(w, map[string]string{"error": "Missing hospital ID in URL"}, http.StatusBadRequest)
+	// Extract ID from URL using gorilla/mux
+	vars := mux.Vars(r)
+	idx, ok := vars["id"]
+	if !ok {
+		http.Error(w, `{"error": "Missing hospital ID in URL"}`, http.StatusBadRequest)
 		return
 	}
 
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idx)
 	if err != nil {
 		util.SendData(w, map[string]string{"error": "Invalid hospital ID format"}, http.StatusBadRequest)
 		return
@@ -120,13 +119,14 @@ func (h *HospitalHandler) GetHospital(w http.ResponseWriter, r *http.Request) {
 
 // UpdateHospital handles PUT requests to modify an existing Hospital record. (U)
 func (h *HospitalHandler) UpdateHospital(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	if idStr == "" {
+	vars := mux.Vars(r)
+	idx, ok := vars["id"]
+	if !ok {
 		util.SendData(w, map[string]string{"error": "Missing hospital ID in URL"}, http.StatusBadRequest)
 		return
 	}
 
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idx)
 	if err != nil {
 		util.SendData(w, map[string]string{"error": "Invalid hospital ID format"}, http.StatusBadRequest)
 		return
@@ -153,18 +153,19 @@ func (h *HospitalHandler) UpdateHospital(w http.ResponseWriter, r *http.Request)
 	}
 
 	util.SendData(w, updatedHospital, http.StatusOK)
-	log.Printf("🔄 Hospital updated: %s (ID: %d)", updatedHospital.Name, updatedHospital.HospitalID)
+	log.Printf("Hospital updated: %s (ID: %d)", updatedHospital.Name, updatedHospital.HospitalID)
 }
 
 // DeleteHospital handles DELETE requests to remove a Hospital record by ID. (D)
 func (h *HospitalHandler) DeleteHospital(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	if idStr == "" {
+	vars := mux.Vars(r)
+	idx, ok := vars["id"]
+	if !ok {
 		util.SendData(w, map[string]string{"error": "Missing hospital ID in URL"}, http.StatusBadRequest)
 		return
 	}
 
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idx)
 	if err != nil {
 		util.SendData(w, map[string]string{"error": "Invalid hospital ID format"}, http.StatusBadRequest)
 		return

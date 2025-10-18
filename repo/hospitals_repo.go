@@ -10,13 +10,13 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// Custom public errors for the repository layer
+// Custom public errors
 var (
 	ErrNotFound     = errors.New("record not found in the database")
 	ErrFailedUpdate = errors.New("failed to update record: zero rows affected")
 )
 
-// Hospital represents the database structure for a hospital record.
+// DB structure for a hospital record.
 type Hospital struct {
 	HospitalID  int       `json:"hospital_id" db:"hospital_id"`
 	Name        string    `json:"name" db:"name"`
@@ -28,7 +28,7 @@ type Hospital struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
-// hospitalRepo implements the HospitalRepo interface.
+// HospitalRepo interface.
 type hospitalRepo struct {
 	dbCon *sqlx.DB
 }
@@ -49,7 +49,7 @@ func NewHospitalRepo(dbCon *sqlx.DB) HospitalRepo {
 	}
 }
 
-// Create executes an INSERT query and returns the created record, including auto-generated fields.
+// INSERT query
 func (r *hospitalRepo) Create(hospital Hospital) (*Hospital, error) {
 	query := `
 		INSERT INTO hospitals (
@@ -75,7 +75,6 @@ func (r *hospitalRepo) Create(hospital Hospital) (*Hospital, error) {
 		  created_at,
 		  updated_at;
 	`
-
 	rows, err := r.dbCon.NamedQuery(query, hospital)
 	if err != nil {
 		return nil, err
@@ -89,12 +88,11 @@ func (r *hospitalRepo) Create(hospital Hospital) (*Hospital, error) {
 		}
 		return &createdHospital, nil
 	}
-	// This path should ideally not be reached if RETURNING is used correctly,
-	// but return an unexpected error just in case.
+
 	return nil, errors.New("failed to return created hospital data")
 }
 
-// Get retrieves a single Hospital record by its ID.
+// Get a single Hospital record by ID.
 func (r *hospitalRepo) Get(id int) (*Hospital, error) {
 	var hsp Hospital
 	query := `SELECT * FROM hospitals WHERE hospital_id = $1`
@@ -109,7 +107,7 @@ func (r *hospitalRepo) Get(id int) (*Hospital, error) {
 	return &hsp, nil
 }
 
-// List retrieves all Hospital records.
+// GET all Hospital records.
 func (r *hospitalRepo) List(search string, offset, limit int) ([]*Hospital, int, error) {
 	var hspList []*Hospital
 	// search pattern
@@ -138,11 +136,10 @@ func (r *hospitalRepo) List(search string, offset, limit int) ([]*Hospital, int,
 	return hspList, total, nil
 }
 
-// Update modifies an existing Hospital record.
+// Update an existing Hospital record.
 func (r *hospitalRepo) Update(h Hospital) (*Hospital, error) {
 	h.UpdatedAt = time.Now()
 
-	// Use named query for easier parameter binding
 	query := `
 		UPDATE hospitals
 		SET 
@@ -163,7 +160,6 @@ func (r *hospitalRepo) Update(h Hospital) (*Hospital, error) {
 		  created_at,
 		  updated_at;
 	`
-
 	rows, err := r.dbCon.NamedQuery(query, h)
 	if err != nil {
 		return nil, fmt.Errorf("error executing update query: %w", err)
@@ -179,10 +175,10 @@ func (r *hospitalRepo) Update(h Hospital) (*Hospital, error) {
 	}
 
 	// If rows.Next() is false, it means no rows were returned, so the ID didn't match.
-	return nil, ErrFailedUpdate // Return custom public error
+	return nil, ErrFailedUpdate
 }
 
-// Delete removes a Hospital record by ID.
+// Delete a Hospital record by ID.
 func (r *hospitalRepo) Delete(id int) error {
 	query := `DELETE from hospitals WHERE hospital_id = $1`
 	result, err := r.dbCon.Exec(query, id)
@@ -193,12 +189,11 @@ func (r *hospitalRepo) Delete(id int) error {
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		log.Printf("Could not get rows affected after delete: %v", err)
-		// Continue, as delete was likely successful but we can't confirm.
 		return nil
 	}
 
 	if rowsAffected == 0 {
-		return ErrNotFound // Return custom public error if no row was deleted
+		return ErrNotFound
 	}
 
 	return nil
