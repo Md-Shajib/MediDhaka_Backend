@@ -15,6 +15,7 @@ func initRoutes(r *mux.Router, manager *middleware.Manager, hospitalRepo repo.Ho
 	hospitalHandler := handlers.NewHospitalHandler(hospitalRepo)
 	doctorHandler := handlers.NewDoctorHandler(doctorRepo)
 	hospitalDoctorHandler := handlers.NewHospitalDoctorHandler(hospitalDoctorRepo)
+	searchHandler := handlers.NewSearchHandler(doctorRepo, hospitalRepo)
 
 	// ---------- Hospital Routes ----------
 	r.Handle("/hospitals", manager.With(http.HandlerFunc(hospitalHandler.CreateHospital))).Methods("POST", "OPTIONS")
@@ -33,4 +34,8 @@ func initRoutes(r *mux.Router, manager *middleware.Manager, hospitalRepo repo.Ho
 	// ---------- Hospital–Doctor Relation ----------
 	r.Handle("/hospital-doctor", manager.With(http.HandlerFunc(hospitalDoctorHandler.AssignDoctor))).Methods("POST", "OPTIONS")
 	r.Handle("/hospital-doctor/{id}", manager.With(http.HandlerFunc(hospitalDoctorHandler.ListDoctorsByHospital))).Methods("GET", "OPTIONS")
+
+	// ---------- Search Route ----------
+	r.Handle("/search", manager.With(http.HandlerFunc(searchHandler.Search))).Methods("GET", "OPTIONS")
+
 }
