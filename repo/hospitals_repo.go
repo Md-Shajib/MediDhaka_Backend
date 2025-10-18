@@ -37,7 +37,7 @@ type hospitalRepo struct {
 type HospitalRepo interface {
 	Create(hospital Hospital) (*Hospital, error)
 	Get(id int) (*Hospital, error)
-	List() ([]*Hospital, error)
+	List(search string, offset, limit int) ([]*Hospital, int, error)
 	Update(h Hospital) (*Hospital, error)
 	Delete(id int) error
 }
@@ -110,14 +110,32 @@ func (r *hospitalRepo) Get(id int) (*Hospital, error) {
 }
 
 // List retrieves all Hospital records.
-func (r *hospitalRepo) List() ([]*Hospital, error) {
+func (r *hospitalRepo) List(search string, offset, limit int) ([]*Hospital, int, error) {
 	var hspList []*Hospital
-	query := `SELECT * FROM hospitals ORDER BY created_at DESC`
-	err := r.dbCon.Select(&hspList, query)
-	if err != nil {
-		return nil, fmt.Errorf("error listing hospitals: %w", err)
+	// search pattern
+	searchQuery := "%"
+	if search != "" {
+		searchQuery = "%" + search + "%"
 	}
-	return hspList, nil
+
+	var total int
+	err := r.dbCon.Get(&total, "SELECT COUNT(*) FROM hospitals WHERE name ILIKE $1", searchQuery)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error counting hospitals: %w", err)
+	}
+
+	query := `
+		SELECT *
+		FROM hospitals
+		WHERE name ILIKE $1
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+	err = r.dbCon.Select(&hspList, query, searchQuery, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error fetching hospitals: %w", err)
+	}
+	return hspList, total, nil
 }
 
 // Update modifies an existing Hospital record.

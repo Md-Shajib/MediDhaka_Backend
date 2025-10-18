@@ -52,15 +52,41 @@ func (h *HospitalHandler) CreateHospital(w http.ResponseWriter, r *http.Request)
 
 // ListHospitals handles GET requests to retrieve a list of all Hospital records. (R - All)
 func (h *HospitalHandler) ListHospitals(w http.ResponseWriter, r *http.Request) {
-	list, err := h.repo.List()
+	query := r.URL.Query()
+	search := query.Get("search")
+	page := 1
+	limit := 10
+
+	if p := query.Get("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = v
+		}
+	}
+	if l := query.Get("limit"); l != "" {
+		if v, err := strconv.Atoi(l); err == nil && v > 0 {
+			limit = v
+		}
+	}
+
+	offset := (page - 1) * limit
+	hospitals, total, err := h.repo.List(search, offset, limit)
+
 	if err != nil {
 		log.Printf("Failed to list hospitals: %v", err)
 		util.SendData(w, map[string]string{"error": "Internal server error listing hospitals"}, http.StatusInternalServerError)
 		return
 	}
 
+	response := map[string]interface{}{
+		"data":       hospitals,
+		"limit":      limit,
+		"page":       page,
+		"total":      total,
+		"totalPages": (total + limit - 1) / limit,
+	}
+
 	// Returns an empty JSON array if no records are found, which is standard.
-	util.SendData(w, list, http.StatusOK)
+	util.SendData(w, response, http.StatusOK)
 }
 
 // GetHospital handles GET requests to retrieve a single Hospital by ID. (R - Single)
