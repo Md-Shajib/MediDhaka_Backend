@@ -34,12 +34,38 @@ func (h *DoctorHandler) CreateDoctor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *DoctorHandler) ListDoctors(w http.ResponseWriter, r *http.Request) {
-	list, err := h.repo.List()
+	query := r.URL.Query()
+	search := query.Get("search")
+	page := 1
+	limit := 10
+
+	if p := query.Get("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = v
+		}
+	}
+	if l := query.Get("limit"); l != "" {
+		if v, err := strconv.Atoi(l); err == nil && v > 0 {
+			limit = v
+		}
+	}
+	offset := (page - 1) * limit
+
+	list, total, err := h.repo.List(search, offset, limit)
 	if err != nil {
 		util.SendData(w, map[string]string{"error": "Failed to fetch doctors"}, http.StatusInternalServerError)
 		return
 	}
-	util.SendData(w, list, http.StatusOK)
+
+	response := map[string]interface{}{
+		"data":       list,
+		"total":      total,
+		"page":       page,
+		"limit":      limit,
+		"totalPages": (total + limit - 1) / limit,
+	}
+
+	util.SendData(w, response, http.StatusOK)
 }
 
 func (h *DoctorHandler) GetDoctor(w http.ResponseWriter, r *http.Request) {

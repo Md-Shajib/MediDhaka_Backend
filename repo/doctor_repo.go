@@ -2,6 +2,7 @@ package repo
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -27,7 +28,7 @@ type Doctor struct {
 
 type DoctorRepo interface {
 	Create(doctor Doctor) (*Doctor, error)
-	List() ([]Doctor, error)
+	List(search string, offset, limit int) ([]Doctor, int, error)
 	Get(id int) (*Doctor, error)
 	Update(doctor Doctor) (*Doctor, error)
 	Delete(id int) error
@@ -83,11 +84,30 @@ func (r *doctorRepo) Create(d Doctor) (*Doctor, error) {
 	return nil, nil
 }
 
-func (r *doctorRepo) List() ([]Doctor, error) {
+func (r *doctorRepo) List(search string, offset, limit int) ([]Doctor, int, error) {
 	var doctors []Doctor
-	query := `SELECT * FROM doctors ORDER BY created_at DESC`
-	err := r.db.Select(&doctors, query)
-	return doctors, err
+	// search pattern
+	searchQuery := "%"
+	if search != "" {
+		searchQuery = "%" + search + "%"
+	}
+	var total int
+	errCount := r.db.Get(&total, `SELECT COUNT(*) FROM doctors WHERE name ILIKE $1`, searchQuery)
+	if errCount != nil {
+		return nil, 0, fmt.Errorf("error counting hospitals: %w", errCount)
+	}
+	query := `
+	  SELECT *
+	  FROM doctors
+	  WHERE name ILIKE $1
+	  ORDER BY created_at DESC
+	  LIMIT $2 OFFSET $3 
+	`
+	err := r.db.Select(&doctors, query, searchQuery, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error fetching doctors: %w", err)
+	}
+	return doctors, total, nil
 }
 
 func (r *doctorRepo) Get(id int) (*Doctor, error) {
