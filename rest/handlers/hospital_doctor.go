@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"medidhaka/repo"
 	"medidhaka/util"
 	"net/http"
@@ -48,7 +47,6 @@ func (h *HospitalDoctorHandler) ListDoctorsByHospital(w http.ResponseWriter, r *
 		util.SendData(w, map[string]string{"error": "Invalid hospital ID format"}, http.StatusBadRequest)
 		return
 	}
-	fmt.Println("Hospital ID:", id)
 	doctors, err := h.repo.ListDoctorsByHospital(id)
 	if err != nil {
 		util.SendData(w, map[string]string{"error": "Failed to fetch doctors"}, http.StatusInternalServerError)
@@ -56,4 +54,26 @@ func (h *HospitalDoctorHandler) ListDoctorsByHospital(w http.ResponseWriter, r *
 	}
 
 	util.SendData(w, doctors, http.StatusOK)
+}
+
+// Delete doctor-hospital relation
+func (h *HospitalDoctorHandler) DeleteDoctorRelation(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	hospitalIdx, ok1 := vars["hospital_id"]
+	doctorIdx, ok2 := vars["doctor_id"]
+	if !ok1 || !ok2 {
+		util.SendData(w, map[string]string{"error": "Missing IDs in URL"}, http.StatusBadRequest)
+		return
+	}
+	hospitalID, errConv1 := strconv.Atoi(hospitalIdx)
+	doctorID, errConv2 := strconv.Atoi(doctorIdx)
+	if errConv1 != nil || errConv2 != nil {
+		util.SendData(w, map[string]string{"error": "Invalid ID format"}, http.StatusBadRequest)
+		return
+	}
+	if err := h.repo.DeleteDoctorRelation(hospitalID, doctorID); err != nil {
+		util.SendData(w, map[string]string{"error": "Failed to delete relation"}, http.StatusInternalServerError)
+		return
+	}
+	util.SendData(w, map[string]string{"message": "Relation deleted successfully"}, http.StatusOK)
 }

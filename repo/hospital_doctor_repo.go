@@ -17,6 +17,7 @@ type HospitalDoctor struct {
 type HospitalDoctorRepo interface {
 	AssignDoctor(rel HospitalDoctor) error
 	ListDoctorsByHospital(hospitalID int) ([]Doctor, error)
+	DeleteDoctorRelation(hospitalID, doctorID int) error
 }
 
 type hospitalDoctorRepo struct {
@@ -53,4 +54,18 @@ func (r *hospitalDoctorRepo) ListDoctorsByHospital(hospitalID int) ([]Doctor, er
 	`
 	err := r.db.Select(&doctors, query, hospitalID)
 	return doctors, err
+}
+
+func (r *hospitalDoctorRepo) DeleteDoctorRelation(hospitalID, doctorID int) error {
+	query := `
+		DELETE FROM hospital_doctor
+		WHERE hospital_id = :hospital_id AND doctor_id = :doctor_id
+	`
+	params := map[string]interface{}{
+		"hospital_id": hospitalID,
+		"doctor_id":   doctorID,
+	}
+
+	_, err := r.db.NamedExec(query, params)
+	return err
 }
