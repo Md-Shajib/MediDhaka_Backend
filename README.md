@@ -51,7 +51,7 @@ Medidhaka is a RESTful API service for managing hospitals, doctors, and their re
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/medidhaka.git
+   git clone https://github.com/Md-Shajib/MediDhaka_Backend.git
    cd medidhaka
 2. Configure your PostgreSQL connection string in db/connection.go:
     ```bash
