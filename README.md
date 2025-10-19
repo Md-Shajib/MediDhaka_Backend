@@ -63,6 +63,11 @@ Medidhaka is a RESTful API service for managing hospitals, doctors, and their re
    ```bash
    go build -o medidhaka ./cmd/server
     ./medidhaka
+   ```
+   or,
+   ```
+   go run main.go
+   ```
 5. API server listens on port 8080 by default. Otherwise you have to define the port. Here I am using .env file to set the port.
 ---
 
@@ -131,8 +136,11 @@ medidhaka/
 │   │   └── manager.go        # Middleware manager for chaining
 │   ├── routes.go
 │   └── server.go             # Repository & Route Initialize
-└── util/
-    └── send_data.go          # Utility functions for response formatting
+├── util/
+│    └── send_data.go          # Utility functions for response formatting
+└── main.go 
+
+
 ```
 ---
 
